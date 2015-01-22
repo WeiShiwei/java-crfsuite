@@ -1,9 +1,9 @@
 package org.apache.mahout.classifier.sequencelearning.crf;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class FeatureExpander {
 	private static int xsize;//标注语料库横向的维度,初始化后不能改变
@@ -12,7 +12,8 @@ public class FeatureExpander {
 	static String EOS[] = { "_B+1", "_B+2", "_B+3", "_B+4"};
 	
 //	private int ysize;//此ysize指的是句子token的数量，他在FeatureStrGenerate()中设置
-	private Set<String> HiddenStateSet=new HashSet<String>();//隐藏状态集合
+//	private Set<String> HiddenStateSet=new HashSet<String>();//隐藏状态集合
+	private Set<String> HiddenStateSet=new TreeSet<String>();//隐藏状态集合
 	private ArrayList<String>  HiddenStateList=new ArrayList<String>();//隐藏状态列表
 	
 	FeatureTemplate featureTemplate;
@@ -56,7 +57,7 @@ public class FeatureExpander {
 	 * @param tagger
 	 * @return
 	 */
-	public boolean Expand(ArrayList<String> token_list,TaggerImpl tagger){
+	public boolean expand(ArrayList<String> token_list,TaggerImpl tagger){
 		ArrayList<ArrayList<String> > tokenALAL=new ArrayList<ArrayList<String> >();
 		
 		int max_xsize=0;int min_xsize=999;
@@ -69,6 +70,7 @@ public class FeatureExpander {
 		for(int i=0;i<tokenArr.length;i++){//tokenArr[i]="a1 b1 c1"
 			String token[]=tokenArr[i].split(" ");//token={a1 b1 c1}
 			tagger.answerStr.add(token[xsize-1]);/*answer*/
+			HiddenStateSet.add(token[xsize-1]);
 			
 			if(token.length>max_xsize){max_xsize=token.length;}
 			if(token.length<min_xsize){min_xsize=token.length;}

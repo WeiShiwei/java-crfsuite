@@ -81,13 +81,17 @@ public class TaggerImpl {
 		this.xsize=xsize;
 		this.ysize=ysize;
 	}
+	public TaggerImpl(Vector alpha){
+		this.alpha = alpha;
+	}
 	public TaggerImpl(){}
 	
 	/**
 	 * buildLattice
 	 * 创建网格（节点与边）
 	 */
-	private void buildLattice() {
+//	private void buildLattice() {
+	public void buildLattice() {
 		LatticAllocate();//为nodeList和pathList初始化和分配空间
 		
 		if(x.isEmpty()){
@@ -179,7 +183,8 @@ public class TaggerImpl {
 	/**
 	 * 前向后向算法
 	 */
-	private void forwardbackward() {
+//	private void forwardbackward() {
+	public void forwardbackward() {
 		if(x.isEmpty()){
 			return;
 		}
@@ -205,7 +210,8 @@ public class TaggerImpl {
 	/**
 	 * viterbi算法
 	 */
-	private void viterbi() {
+//	private void viterbi() {
+	public ArrayList<Integer> viterbi() {
 		for(int i=0;i<xsize;i++){//token的遍历
 			for(int j=0;j<ysize;j++){//纵向的遍历
 				double bestc = -1e37;
@@ -243,11 +249,13 @@ public class TaggerImpl {
 		}
 		cost=-Lattic(xsize-1,result.get(xsize-1)).bestCost;//
 		
-		System.out.println("viterbi()预测的状态有序集合:");
-		for(int thenode : result){
-			System.out.print(thenode+" ");
-		}
-		System.out.println();
+//		System.out.println("viterbi()预测的状态有序集合:");
+//		for(int thenode : result){
+//			System.out.print(thenode+" ");
+//		}
+//		System.out.println();
+		
+		return result;
 	}
 	/**
 	 * eval()
@@ -341,7 +349,7 @@ public class TaggerImpl {
 //		ExpectationDebug();///调试
 
 //		System.out.println("viterbi算法：");///调试
-//		viterbi();
+		viterbi();
 		
 //		System.out.println("Z="+Z);///调试
 //		System.out.println("s="+s);

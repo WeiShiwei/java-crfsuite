@@ -1,14 +1,18 @@
 package org.apache.mahout.classifier.sequencelearning.crf;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 public class CRFDriver{
 	private static int converge=0;
-	
 	int maxid;
 	
 	Vector alpha;
@@ -17,73 +21,146 @@ public class CRFDriver{
 	int err;
 	int zeroone;
 
-	ArrayList<TaggerImpl> taggers = new ArrayList<TaggerImpl>();
-	CRFLBFGS clbfgs;
+	FeatureTemplate featureTemplate;//特征模板
+	FeatureExpander featureExpander;//特征扩展器
+	FeatureIndexer featureIndexer;//特征索引器
 	
+	ArrayList<TaggerImpl> taggers;
+	CRFLBFGS clbfgs;
 	/**
 	 * 
 	 * @param taggers
 	 * @param maxid
 	 */
-	public CRFDriver(ArrayList<TaggerImpl> taggers, int maxid){
-		this.maxid = maxid;
+	public CRFDriver(){
+		this.clbfgs = new CRFLBFGS();
+	}
+	
+	public void initializeCrfDriver(){
+		this.maxid = this.featureIndexer.getMaxID();
 		
-		this.alpha = new DenseVector(this.maxid);
+		this.alpha = new DenseVector(this.maxid);// 上次迭代之后，alpha会被更新
 		for(int i=0;i<this.alpha.size();i++){
 			this.alpha.set(i, 0.0);
 		}
-		this.expected = new DenseVector(this.maxid);
+		this.expected = new DenseVector(this.maxid);// 全局的expected一致被更新
 		for(int i=0;i<this.expected.size();i++){
 			this.expected.set(i, 0.0);
 		}
-//		this.obj = new DenseVector(1);
-//		this.err = new DenseVector(1);
-//		this.zeroone = new DenseVector(1);
-		
-//		this.alpha = new double[this.maxid]; // 上次迭代之后，alpha会被更新
-//		this.expected = new double[this.maxid]; // 上次迭代之后，expected会被初始化为元素为0的数组
 		this.obj = 0.0;
 		this.err = 0;
 		this.zeroone = 0;
+	}
+	
+	/**
+	 * 
+	 * @param templfile
+	 * @param trainfile
+	 * @param modelfile
+	 * @param textmodelfile
+	 * @param xsize
+	 * @param maxitr
+	 * @param freq
+	 * @param eta
+	 * @param C
+	 * @param algorithm
+	 * @return
+	 * @throws IOException
+	 */
+	@SuppressWarnings("resource")
+	public CRFModel crf_learn(String templfile, 
+						String trainfile, 
+						String modelfile,
+						boolean textmodelfile, 
+						int xsize, int maxitr, double freq, double eta, double C, String algorithm) throws IOException{
+		this.featureTemplate = new FeatureTemplate(templfile);//特征模板
+		this.featureExpander = new FeatureExpander(this.featureTemplate,xsize);//特征扩展器
 		
-		this.taggers= taggers;
-		this.clbfgs = new CRFLBFGS();
+		//TaggerImpl:crf算法的计算单元，其对应一个句子
+		this.taggers= new ArrayList<TaggerImpl>();
+		File trainDataPath = new File("./train.data");
+		BufferedReader reader = new BufferedReader(new FileReader(trainDataPath));
+		String line = null;
+		ArrayList<String> token_list = new ArrayList<String>();
+		while ((line = reader.readLine()) != null) {
+			TaggerImpl tagger=new TaggerImpl();			
+			if( line.trim().equals("") ){
+				this.featureExpander.expand(token_list,tagger);//特征扩展
+				this.taggers.add(tagger);
+				token_list = new ArrayList<String>();
+			}else{
+				token_list.add(line);
+			}
+		}
+		
+		// 特征索引器
+		this.featureIndexer = new FeatureIndexer();
+		this.featureIndexer.IndexingHStateIndex( this.featureExpander.getHiddenStateSet() );
+		for (int i = 0; i < this.taggers.size(); i++) {
+			TaggerImpl tagger = this.taggers.get(i);
+			this.featureIndexer.IndexingFeatureIndex(tagger);// 索引特征
+			this.featureIndexer.Register(tagger);// 注册tagger
+		}
+		
+		this.initializeCrfDriver();
+		this.iterateMR(maxitr, eta);
+		
+		CRFModel model = new CRFModel(featureTemplate,featureExpander,featureIndexer,alpha,expected,obj,err,zeroone);
+		return model;
 	}
 
-	public void info_after_gradient(int n, Vector alpha2, double f, Vector expected2) {
-
-		System.out.println("n:" + n);
-		System.out.println("x:");
-		for (int i = 0; i < alpha2.size(); i++) {
-//			System.out.println("x[" + i + "]=" + alpha2[i]);
-			System.out.println("x[" + i + "]=" + alpha2.get(i));
+	/**
+	 * 
+	 * @param templfile
+	 * @param testfile
+	 * @param model
+	 * @param xsize
+	 * @return
+	 * @throws IOException
+	 */
+	@SuppressWarnings("resource")
+	public boolean crf_test(String templfile, String testfile,
+			CRFModel model, int xsize) throws IOException {
+		this.featureExpander = model.featureExpander;
+		this.featureIndexer = model.featureIndexer;
+		Set<String> hsSet = this.featureExpander.getHiddenStateSet();
+		String hsArray[] = new String[hsSet.size()];
+		int id = 0;
+		for( String hiddenState:hsSet){
+			hsArray[id] = hiddenState;
+			id++;
 		}
-
-		System.out.println("f:" + f);
-
-		System.out.println("g:");
-		for (int i = 0; i < expected2.size(); i++) {
-			System.out.println("g[" + i + "]=" + expected2.get(i));
-		}
-		System.out.println();
-	}
-
-	public void info_before_lbfgs(int n,double x[],double f,double g[]){
 		
-		System.out.println("n:"+n);
-		System.out.println("x:");
-		for(int i=0;i<x.length;i++){
-			System.out.println("x["+i+"]="+x[i]);
+		//TaggerImpl:crf算法的计算单元，其对应一个句子
+		File testDataPath = new File( testfile );
+		BufferedReader reader = new BufferedReader( new FileReader(testDataPath) );
+		String line = null;
+		ArrayList<String> token_list = new ArrayList<String>();
+		while ( (line = reader.readLine()) != null ) {
+			System.out.println(line);
+			TaggerImpl tagger = new TaggerImpl(model.alpha);//为每一个tagger提供其viterbi计算的基础数据:模型的alpha
+			if (line.trim().equals("")) {
+				this.featureExpander.expand( token_list, tagger );// 特征扩展
+				this.featureIndexer.Register( tagger );// 注册tagger	
+				//特征扩展那一块，训练数据扩展出来的特征没有测试语句扩展出的特征怎么办
+				tagger.buildLattice();
+				tagger.forwardbackward();
+				ArrayList<Integer> result = tagger.viterbi();
+				
+				int tokensNum = token_list.size();
+				for(int i=0; i<tokensNum; i++){
+					System.out.println( token_list.get(i) + '\t' + hsArray[result.get(i)] );
+				}
+				
+				token_list = new ArrayList<String>();
+			} else {
+				token_list.add(line);
+			}
 		}
-
-		System.out.println("f:"+f);
 		
-		System.out.println("g:");
-		for(int i=0;i<g.length;i++){
-			System.out.println("g["+i+"]="+g[i]);
-		}
-		System.out.println();
+		return true;
 	}
+	
 	/**
 	 * @return 
 	 * 
@@ -152,13 +229,14 @@ public class CRFDriver{
 	}
 	
 	public void iterateMR(int numIterations, double eta) throws IOException{
+		System.out.println("Running CRF");
 		Double old_obj = new Double(0.0);
 		Double obj = new Double(0.0);
 		
 		int iteration = 1;
 		while (iteration <= numIterations) {
 			String jobName = "CRF Iterator running iteration " + iteration;
-//			System.out.println(jobName);//调试
+			//System.out.println(jobName);//调试
 			
 			obj = this.run();
 			if (isConverged(iteration, numIterations,eta, old_obj, obj)) {

@@ -2,10 +2,11 @@ package org.apache.mahout.classifier.sequencelearning.crf;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-public class FeatureIndex {
+public class FeatureIndexer {
 
 	class Pair{
 		int ID=0;
@@ -21,19 +22,14 @@ public class FeatureIndex {
 	private Map<String, Pair> FeatureIndexMap = new HashMap<String, Pair>();
 	private Map<String, Integer> HStateIndexMap = new HashMap<String, Integer>();
 	
-	public void IndexingHStateIndex(String[] hidden_state_array){
-		System.out.print("FeatureIndex::IndexingHStateIndex()=");
-		for(int i=0;i<hidden_state_array.length;i++){
-			System.out.print(hidden_state_array[i]+" ");
-		}
-		System.out.println();
-		
-		ysize=hidden_state_array.length;
-		for(int i=0;i<hidden_state_array.length;i++){
-			String hidden_state = hidden_state_array[i];
+	public void IndexingHStateIndex(Set<String> hiddenStateTreeSet){
+		ysize = hiddenStateTreeSet.size();
+		int i=0;
+		for(String hidden_state : hiddenStateTreeSet){
 			if(hidden_state!=""){
 				HStateIndexMap.put(hidden_state, i);
 			}
+			i++;
 		}
 	}
 	public void IndexingFeatureIndex(TaggerImpl tagger){
@@ -59,7 +55,9 @@ public class FeatureIndex {
 		for(ArrayList<String> featurelist : tagger.xStr){
 			ArrayList<Integer> fvector=new ArrayList<Integer>();
 			for(String feature:featurelist){
-				fvector.add(FeatureIndexMap.get(feature).ID);
+				if( FeatureIndexMap.containsKey(feature) ){
+					fvector.add(FeatureIndexMap.get(feature).ID);
+				}
 			}
 			tagger.x.add(fvector);///
 		}
@@ -73,6 +71,27 @@ public class FeatureIndex {
 	
 	public int getMaxID(){
 		return maxid;
+	}
+	
+	
+	public void infoFeatureIndexMap(){
+		Iterator<String> iter = FeatureIndexMap.keySet().iterator();
+		while (iter.hasNext()) {
+			String key = iter.next();
+			Pair value = FeatureIndexMap.get(key);
+			System.out.println("("+key+"  "+value.ID+")");
+		}
+	}
+	
+	public Map<String, Integer> getFeatureIndexMap(){
+		Map<String, Integer> featureIndexMap = new HashMap<String, Integer>();
+		Iterator<String> iter = FeatureIndexMap.keySet().iterator();
+		while (iter.hasNext()) {
+			String feature = iter.next();
+			Pair value = FeatureIndexMap.get(feature);
+			featureIndexMap.put(feature, value.ID);
+		}
+		return featureIndexMap;
 	}
 	
 }
