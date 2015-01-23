@@ -7,7 +7,7 @@ public class main {
 	static CRFModel model;
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		crf_learn();
-		crf_test();
+//		crf_test();
 	}
 	
 	public static boolean crf_learn() throws IOException{
@@ -26,6 +26,7 @@ public class main {
 		String algorithm = "L-BFGS";
 		model = driver.crf_learn(templfile, trainfile, modelfile, textmodelfile, xsize, maxitr, freq, eta, C, algorithm);
 		
+		model.dump(modelfile);
 		return true;
 	}
 	
