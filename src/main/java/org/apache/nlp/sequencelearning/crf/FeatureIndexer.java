@@ -18,7 +18,7 @@ public class FeatureIndexer {
 	}
 	private int ysize=0;//隐藏状态集合的大小，在IndexingHiddenState函数中更新设置
 	private int maxid=0;//特征函数的个数，在IndexingFeatureIndex函数中更新设置
-	//注意：如果Writable类型作为Map容器的类型会出错的，遍历的时候全部是最后一个元素，但我不知道为什么
+	//注意：如果Writable类型作为Map容器的类型会出错的，遍历的时候全部是最后一个元素
 	private Map<String, Pair> FeatureIndexMap = new HashMap<String, Pair>();
 	private Map<String, Integer> HStateIndexMap = new HashMap<String, Integer>();
 	
@@ -59,14 +59,14 @@ public class FeatureIndexer {
 					fvector.add(FeatureIndexMap.get(feature).ID);
 				}
 			}
-			tagger.x.add(fvector);///
+			tagger.x.add(fvector);
 		}
 		
 		for(String hiddenstate : tagger.answerStr){
-			tagger.answer.add(HStateIndexMap.get(hiddenstate));///
+			tagger.answer.add(HStateIndexMap.get(hiddenstate));
 		}
-		tagger.xsize=tagger.answerStr.size();///
-		tagger.ysize=ysize;///
+		tagger.xsize=tagger.answerStr.size();
+		tagger.ysize=ysize;
 	}
 	
 	public int getMaxID(){

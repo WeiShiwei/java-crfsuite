@@ -9,10 +9,10 @@ import org.apache.nlp.sequencelearning.crf.CRFModel;
 public class crf_learn_test {
 
     // 指定 templfile,trainfile,testfile,modelfile的文件路径
-    static String templfile = "/Users/weishiwei/IdeaProjects/java-crfsuite/src/test/files/template";
-    static String trainfile = "/Users/weishiwei/IdeaProjects/java-crfsuite/src/test/files/train.data";
-    static String testfile = "/Users/weishiwei/IdeaProjects/java-crfsuite/src/test/files/test.data";
-    static String modelfile = "/Users/weishiwei/IdeaProjects/java-crfsuite/src/test/files/model.data";
+    static String templfile = "/Users/weishiwei/GitHub/java-crfsuite/src/test/files/template";
+    static String trainfile = "/Users/weishiwei/GitHub/java-crfsuite/src/test/files/train.data";
+    static String testfile = "/Users/weishiwei/GitHub/java-crfsuite/src/test/files/test.data";
+    static String modelfile = "/Users/weishiwei/GitHub/java-crfsuite/src/test/files/model.data";
 
     static CRFModel model;
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {

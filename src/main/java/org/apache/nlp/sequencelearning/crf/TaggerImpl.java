@@ -15,37 +15,34 @@ public class TaggerImpl {
 		if (flg) return y;  // init mode
 		double vmin = Math.min(x, y);
 		double vmax = Math.max(x, y);
-		if (vmax > vmin + MINUS_LOG_EPSILON) {///MINUS_LOG_EPSILON 像一个阈值
+		if (vmax > vmin + MINUS_LOG_EPSILON) {
 			return vmax;
 		} else {
-			return vmax + Math.log(Math.exp(vmin - vmax) + 1.0);///【平滑处理？？？】
+			return vmax + Math.log(Math.exp(vmin - vmax) + 1.0);
 		}
 	}
 
-	/****************************TaggerImplWritable中需要存储的**********************************************/
-	//xStr是x的String版本
+	/** TaggerImplWritable中需要存储的 */
+	// xStr是x的String版本
 	ArrayList<ArrayList<String> > xStr=new ArrayList<ArrayList<String> >();
-	//answerStr是answer的String版本
+	// answerStr是answer的String版本
 	ArrayList<String> answerStr=new ArrayList<String>();
-	/*特征索引矩阵x的元素都是fvector，前xsize个是状态特征的，后xsize个是转移特征的；因此x是（xsize*2）*（col）维,按行遍历*/
+	// 特征索引矩阵x的元素都是fvector，前xsize个是状态特征的，后xsize个是转移特征的；因此x是（xsize*2）*（col）维,按行遍历
 	ArrayList<ArrayList<Integer> > x=new ArrayList<ArrayList<Integer> >();
-	/*token对应的标识序列 */
+	// token对应的标识序列
 	ArrayList<Integer> answer=new ArrayList<Integer>();
-	/*句子token的数量*/
+	// 句子token的数量
 	int xsize=0;
-	/*预测标记(隐藏状态)集合的大小,不是句子token扩展出来的特征的数量，切记*/
+	// 预测标记(隐藏状态)集合的大小,不是句子token扩展出来的特征的数量
 	int ysize=0;
 	
-	/****************************TaggerImplWritable中不需要存储的，是计算得来的**********************************************/
-	/*罚函数*/
+	/** TaggerImplWritable中不需要存储的，是计算得来的*/
+	// 罚函数
 	ArrayList<ArrayList<Double> > penalty=new ArrayList<ArrayList<Double> >();
-	/*预测结果*/
+	// 预测结果
 	ArrayList<Integer> result=new ArrayList<Integer>();
-	/**/
 	int nbest;
-	/**/
 	double cost;
-	/**/
 	double Z;
 	
 	/**
@@ -57,9 +54,9 @@ public class TaggerImpl {
 	ArrayList<CPath> pathList;
 	
 	/**alpha与expected两者，只是在这里定义，其引用的是mapper中为两者分配alpha与expected*/
-	/*特征的权重系数*/
+	// 特征的权重系数
 	Vector alpha=new DenseVector();
-	/*特征的期望（模型期望与经验期望）*/
+	// 特征的期望（模型期望与经验期望）
 	Vector expected=new DenseVector();
 	
 	
@@ -68,7 +65,6 @@ public class TaggerImpl {
 	 * @param xStr
 	 * @param answerStr
 	 * @param x
-	 * @param y
 	 * @param xsize
 	 * @param ysize
 	 */
@@ -90,7 +86,6 @@ public class TaggerImpl {
 	 * buildLattice
 	 * 创建网格（节点与边）
 	 */
-//	private void buildLattice() {
 	public void buildLattice() {
 		LatticAllocate();//为nodeList和pathList初始化和分配空间
 		
@@ -102,22 +97,19 @@ public class TaggerImpl {
 		for(int cur=0;cur<xsize;cur++){//节点
 			ArrayList<Integer> fvector=x.get(fid++);
 			for(int j=0;j<ysize;j++){
-//				System.out.println("("+cur+","+j+")");
 				Lattic(cur,j).set(cur,j,fvector);
 			}
 		}
-//		System.out.println("node设置完成");
 		for(int cur=1;cur<xsize;cur++){//路径
 			ArrayList<Integer> fvector=x.get(fid++);
 			for(int j=0;j<ysize;j++){
 				for(int k=0;k<ysize;k++){
-//					System.out.println("k:"+k);
-					Lattic(cur,j,k).add(Lattic(cur-1,j), Lattic(cur,k));//void Path::add(Node _lnode, Node _rnode)注意对象参数是引用类型的
+					Lattic(cur,j,k).add(Lattic(cur-1,j), Lattic(cur,k));
 					Lattic(cur,j,k).fvector=fvector;
 				}
 			}
 		}
-//		System.out.println("path设置完成");
+
 		//计算节点和路径的cost
 		for(int cur=0;cur<xsize;cur++){
 			for(int j=0;j<ysize;j++){
@@ -135,22 +127,20 @@ public class TaggerImpl {
 	 * 为nodeList，pathList和result分配初始工作空间
 	 */
 	private void LatticAllocate(){
-		//注意：ArrayList初始化即分配空间，提高效率
+		// ArrayList初始化即分配空间，提高效率
 		int nodeNum=xsize*ysize;
-//		System.out.println("LatticAllocate()  nodeNum:"+nodeNum);
 		nodeList=new ArrayList<Node>(nodeNum);
 		for(int i=0;i<nodeNum;i++){
 			nodeList.add(new Node());
 		}
 		
 		int pathNum=(xsize-1)*ysize*ysize;
-//		System.out.println("LatticAllocate()  pathNum:"+pathNum);
 		pathList=new ArrayList<CPath>(pathNum);
 		for(int i=0;i<pathNum;i++){
 			pathList.add(new CPath());
 		}
 		
-		for(int i=0;i<xsize;i++){//result放在这里好像不太合适
+		for(int i=0;i<xsize;i++){
 			result.add(0);
 		}
 	}
@@ -183,7 +173,6 @@ public class TaggerImpl {
 	/**
 	 * 前向后向算法
 	 */
-//	private void forwardbackward() {
 	public void forwardbackward() {
 		if(x.isEmpty()){
 			return;
@@ -191,29 +180,28 @@ public class TaggerImpl {
 		
 		for(int i=0;i<xsize;i++){//计算节点的alpha值
 			for(int j=0;j<ysize;j++){
-				Lattic(i,j).calcAlpha();//【】
+				Lattic(i,j).calcAlpha();
 			}
 		}
 		
 		for(int i=xsize-1;i>=0;i--){//计算节点的beta值，需反向计算
 			for(int j=0;j<ysize;j++){
-				Lattic(i,j).calcBeta();//【】
+				Lattic(i,j).calcBeta();
 			}
 		}
 		
 		Z=0.0;
 		for (int j = 0; j < ysize; ++j){//根据节点的beta值，计算归一化因子Z
-			Z = logsumexp(Z, Lattic(0,j).beta, j == 0);//【】
+			Z = logsumexp(Z, Lattic(0,j).beta, j == 0);
 		}
 	}
 	
 	/**
 	 * viterbi算法
 	 */
-//	private void viterbi() {
 	public ArrayList<Integer> viterbi() {
 		for(int i=0;i<xsize;i++){//token的遍历
-			for(int j=0;j<ysize;j++){//纵向的遍历
+			for(int j=0;j<ysize;j++){//隐藏状态序列的遍历
 				double bestc = -1e37;
 				Node best = null;
 				for(CPath path : Lattic(i,j).lpath){
@@ -237,23 +225,15 @@ public class TaggerImpl {
 				bestc=Lattic(s,j).bestCost;
 			}
 		}
-		
-		//-*- result -*-
+
 		result=new ArrayList<Integer>();
 		for(int i=0;i<xsize;i++){
 			result.add(0);
 		}
 		for(Node n=best;n!=null;n=n.prev){
-//			System.out.println("("+n.x+","+ n.y+")");
 			result.set(n.x, n.y);//
 		}
 		cost=-Lattic(xsize-1,result.get(xsize-1)).bestCost;//
-		
-//		System.out.println("viterbi()预测的状态有序集合:");
-//		for(int thenode : result){
-//			System.out.print(thenode+" ");
-//		}
-//		System.out.println();
 		
 		return result;
 	}
@@ -281,50 +261,26 @@ public class TaggerImpl {
 		if(x.isEmpty()){
 			return 0.0;
 		}
-		 
-//		System.out.println("buildLattice():");//调试
+
 		buildLattice();
-//		NodeDebug();///调试
-//		CPathDebug();
-//		ExpectationDebug();///调试
-		
-//		System.out.println("forwardbackward():");//调试
 		forwardbackward();
-//		NodeDebug();///调试
-//		CPathDebug();
-//		ExpectationDebug();///调试
-		/*********************************************************************/
-		//因该说整个过程node节点的（x,y,alpha,beta,cost,nbestcost）与crf++的输出一致
-		//在下面的calcExpectation开始，expected开始不一致了
-		/*********************************************************************/
 		
 		double s = 0.0;
-		//
 		for(int i=0;i<xsize;i++){
 			for(int j=0;j<ysize;j++){
 				Lattic(i,j).calcExpectation(expected, Z, ysize);//【节点node和边path的期望】
 			}
 		}
-//		System.out.println("模型期望Lattic(i,j).calcExpectation(expected, Z, ysize):");//调试
-//		NodeDebug();///调试
-//		CPathDebug();
-//		ExpectationDebug();///调试
 		
 		for(int i=0;i<xsize;i++){
-//			System.out.println("(i,answer.get(i))=: ("+i+","+answer.get(i)+")");///调试
 			Node selectedNode=Lattic(i,answer.get(i));//selectedNode
 			ArrayList<Integer> fvector=selectedNode.fvector;
-			
-//			System.out.println("fvector="+fvector);///调试
-//			System.out.println("answer.get("+i+"):"+answer.get(i));///调试
-			
+
 			for(int f : fvector){
 				int index=f+answer.get(i);//expected的索引
-//				System.out.println("index="+index);///调试
 				expected.set(index, expected.get(index)-1);
 			}
-			
-//			ExpectationDebug();///调试
+
 			s+=selectedNode.cost;
 			
 			ArrayList<CPath> pathAL=selectedNode.lpath;
@@ -332,7 +288,7 @@ public class TaggerImpl {
 				Node lnode=pathAL.get(j).lnode;//该路径pathAL.get(j)的左边节点
 				Node rnode=pathAL.get(j).rnode;//该路径pathAL.get(j)的右边节点
 				if(lnode.y==answer.get(lnode.x)){//pathAL.get(j).lnode的x和y(条件是y=answer[x])
-					ArrayList<Integer> pvector=pathAL.get(j).fvector;//这里是路径的fvector
+					ArrayList<Integer> pvector=pathAL.get(j).fvector;//路径的fvector
 					for(int f : pvector){
 						int index=f+lnode.y*ysize+rnode.y;//expected的索引
 						expected.set(index, expected.get(index)-1);
@@ -343,17 +299,8 @@ public class TaggerImpl {
 			}
 			
 		}
-//		System.out.println("经验期望：");
-//		NodeDebug();///调试
-//		CPathDebug();
-//		ExpectationDebug();///调试
 
-//		System.out.println("viterbi算法：");///调试
 		viterbi();
-		
-//		System.out.println("Z="+Z);///调试
-//		System.out.println("s="+s);
-//		System.out.println("(Z - s)="+(Z - s));
 		return Z - s ;
 	}
 	
@@ -367,7 +314,6 @@ public class TaggerImpl {
 	 * 返回Node的引用
 	 */
 	private Node Lattic(int x,int y){
-		//Node是对象，传递的是引用
 		return nodeList.get(x*ysize+y);
 	}
 	/**
@@ -381,7 +327,6 @@ public class TaggerImpl {
 	 * @return
 	 */
 	private CPath Lattic(int cur,int j,int k){
-		//Path是对象，传递的是引用
 		return pathList.get((cur-1)*ysize*ysize+j*ysize+k);
 	}
 	/**

@@ -25,15 +25,7 @@ public class FeatureExpander {
 		this.featureTemplate=featureTemplate;//特征模板
 		this.xsize=xsize;
 	}
-	
-//	 /**
-//	  * @return
-//	  * 返回句子token的数量
-//	  * 这个ysize有用吗
-//	  */
-//	public int getysize(){
-//		return ysize;
-//	}
+
 	/**
 	 * @return
 	 * 返回句子的隐藏状态序列
@@ -66,9 +58,9 @@ public class FeatureExpander {
 			tokenArr[i] = token_list.get(i);
 		}
 		
-		for(int i=0;i<tokenArr.length;i++){//tokenArr[i]="a1 b1 c1"
-			String token[]=tokenArr[i].split(" ");//token={a1 b1 c1}
-			tagger.answerStr.add(token[xsize-1]);/*answer*/
+		for(int i=0;i<tokenArr.length;i++){
+			String token[]=tokenArr[i].split(" ");
+			tagger.answerStr.add(token[xsize-1]);// answer
 			HiddenStateSet.add(token[xsize-1]);
 			
 			if(token.length>max_xsize){max_xsize=token.length;}
@@ -81,7 +73,7 @@ public class FeatureExpander {
 			tokenALAL.add(tokenAL);
 		}
 		/*验证判断*/
-		if(max_xsize!=min_xsize||xsize>max_xsize){//如果条件成立，舍弃该句子（当然这种判断并不严谨，但暂时这样）
+		if(max_xsize!=min_xsize||xsize>max_xsize){
 			System.out.println("ERROR：max_xsize!=min_xsize||xsize>max_xsize");
 			return false;
 		}
@@ -258,21 +250,16 @@ public class FeatureExpander {
 		        	//NEXT2
 		        	row *= neg;
 		        	//例：浅层分析中col={0,1,2},xsize=3,xsize=col+1;所以col >=3=(MaxOFcol+1)=(xsize-1+1),条件可以改为col>xsize
-		    		if (row < -4 || row > 4 ||col < 0 || col >=xsize ) {////\static_cast<int>(tagger.xsize())=3
-		    			return null;
-		    		}
-		    		
-		    		// TODO(taku): very dirty workaround
-		    		//if (check_max_xsize_) {
-		    			//max_xsize_ = std::max(max_xsize_, static_cast<unsigned int>(col + 1));
-		    		//}
+		    		if (row < -4 || row > 4 ||col < 0 || col >=xsize ) {
+						return null;
+					}
 
 		    		int idx = pos + row;
 		    		if (idx < 0) {
 		    			return BOS[-idx-1];
 		    		}
-		    		if (idx >= sentenceALAL.size()) {////\sentenceALAL.size()=tagger.size()
-		    		    return EOS[idx - sentenceALAL.size()];////\sentenceALAL.size()=tagger.size()
+		    		if (idx >= sentenceALAL.size()) {
+		    		    return EOS[idx - sentenceALAL.size()];
 		    		}
 		    		
 		    		return sentenceALAL.get(idx).get(col);
@@ -281,6 +268,6 @@ public class FeatureExpander {
 		        default: return  null;
 			}
 		}
-		return null;//
+		return null;
 	}
 }

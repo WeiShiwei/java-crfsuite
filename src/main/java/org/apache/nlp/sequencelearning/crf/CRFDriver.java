@@ -137,7 +137,6 @@ public class CRFDriver{
 			if (line.trim().equals("")) {
 				this.featureExpander.expand( token_list, tagger );// 特征扩展
 				this.featureIndexer.Register( tagger );// 注册tagger	
-				//特征扩展那一块，训练数据扩展出来的特征没有测试语句扩展出的特征怎么办
 				tagger.buildLattice();
 				tagger.forwardbackward();
 				ArrayList<Integer> result = tagger.viterbi();
@@ -162,7 +161,6 @@ public class CRFDriver{
 	 */
 	public double run(){
 		double C = 4.0;
-		// ----------------------------------------------------------------------------------------模拟crfpp中的线程0
 		Vector expected_current_iteration = new DenseVector(this.maxid);
 		for(int i=0;i<expected_current_iteration.size();i++){
 			expected_current_iteration.set(i, 0.0);
@@ -189,7 +187,6 @@ public class CRFDriver{
 		}
 	
 //		this.info_after_gradient(this.maxid, this.alpha, this.obj, this.expected);// debug
-		// ----------------------------------------------------------------------------------------模拟crfpp中的runCRF
 		for(int i=0;i<this.expected.size();i++){
 			this.expected.set(i, 0.0);
 			this.expected.set(i, this.expected.get(i)+expected_current_iteration.get(i));
@@ -265,7 +262,7 @@ public class CRFDriver{
 		}
 		// 迭代次数itr大于迭代次数限制，或者converge=3；退出
 		if (itr > maxitr || converge == 3) {
-			return true; // 3 is ad-hoc[ad-hoc:特定的、自定义?]
+			return true;
 		}
 		return false;
 	}

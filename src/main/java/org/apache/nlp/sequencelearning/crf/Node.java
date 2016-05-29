@@ -5,16 +5,16 @@ import java.util.ArrayList;
 import org.apache.mahout.math.Vector;
 
 public class Node {
-	final double LOG2 = 0.69314718055;//ln2=0.69314718055
-	final double MINUS_LOG_EPSILON=50;//EPSILON希腊语字母之第五字
+	final double LOG2 = 0.69314718055;
+	final double MINUS_LOG_EPSILON=50;
 	double logsumexp(double x, double y, boolean flg) {
 		if (flg) return y;  // init mode
 		double vmin = Math.min(x, y);
 		double vmax = Math.max(x, y);
-		if (vmax > vmin + MINUS_LOG_EPSILON) {///MINUS_LOG_EPSILON 像一个阈值
+		if (vmax > vmin + MINUS_LOG_EPSILON) {
 			return vmax;
 		} else {
-			return vmax + Math.log(Math.exp(vmin - vmax) + 1.0);///【平滑处理？？？】
+			return vmax + Math.log(Math.exp(vmin - vmax) + 1.0);
 		}
 	}
 	

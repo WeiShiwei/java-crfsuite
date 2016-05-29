@@ -25,7 +25,6 @@ public class FeatureTemplate {
 				if(templateLine.startsWith("B")){
 					bigram_templs.add(templateLine);
 				}
-//			    System.out.println(templateLine);
 				//把当前行号显示出来
 //				System.out.println("line " + line + ": " + templateLine);
 				line++;
